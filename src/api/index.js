@@ -9,7 +9,7 @@ import 'isomorphic-fetch';
 
 export default ({ config, db }) => {
 
-	let clearbit = clearbit_client('sk_cc85a3f828e324514428d0f535473922');
+	let clearbit = clearbit_client('sk');
 
 	// First you need to create a connection to the db
 	global.xdb = mysql.createConnection({
