@@ -1,0 +1,48 @@
+CREATE TABLE `domain` (
+  `companyid` varchar(100) NOT NULL,
+  `name` varchar(255),
+  `domain_name` varchar(100) NOT NULL,
+  `country` varchar(100),
+  `alexaRank` varchar(100),
+  `employees` varchar(100),
+  `employeesRange` varchar(100),
+  `estimatedAnnualRevenue` varchar(100),
+  `industry` varchar(100),
+  `industryGroup` varchar(100),
+  `sector` varchar(100),
+  `tech_stack` varchar(500),
+  `linkedin` varchar(100),
+  `facebook` varchar(100),
+  `facebook_likes` varchar(100),
+  `twitter` varchar(100),
+  `twitter_followers` varchar(100),
+  `json_raw` varchar(5000),
+  `eds_raw` varchar(1000),
+  `gmail` varchar(50),
+  `hotmail` varchar(50),
+  `yahoo` varchar(50),
+  PRIMARY KEY(domain_name, companyid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+
+CREATE TABLE `customer` (
+  `personid` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `fullname` varchar(100),
+  `domain_name` varchar(100) NOT NULL,
+  `location` varchar(100),
+  `country` varchar(100),
+  `title` varchar(100),
+  `role` varchar(100),
+  `seniority` varchar(100),
+  `facebook` varchar(100),
+  `twitter` varchar(100),
+  `twitter_followers` varchar(100),
+  `linkedin` varchar(100),
+  `company` varchar(100),
+  `personjson` varchar(5000),
+  PRIMARY KEY(domain_name, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
