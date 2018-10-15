@@ -5,28 +5,35 @@ import mysql from 'mysql';
 import * as request from "request-promise";
 import 'babel-polyfill';
 import 'isomorphic-fetch';
+import { Z_DATA_ERROR } from 'zlib';
+var pool = require('../dbconnection');
 
 
 export default ({ config, db }) => {
 
+	pool.query("select * from customer", null , function (error, results, fields) {
+		console.log("error is :", error);
+	});
+
 	let clearbit = clearbit_client('sk_cc85a3f828e324514428d0f535473922');
 
 	// First you need to create a connection to the db
-	global.xdb = mysql.createConnection({
-		host: 'localhost',
-		user: 'root',
-		password: 'Root@123',
-		database: 'projectx'
-	});
+	// global.xdb = mysql.createConnection({
+	// 	host: 'localhost',
+	// 	user: 'root',
+	// 	paZ_DATA_ERRORssword: 'Root@123',
+	// 	database: 'projectx'
+	// });
 
-	xdb.connect((err) => {
-		if (err) {
-			console.log('Error connecting to Db');
-			return;
-		}
-		console.log('Connection established');
-	});
-
+	// xdb.connect((err) => {
+	// 	if (err) {
+	// 		console.log('Error connecting to Db');
+	// 		return;
+	// 	}
+	// 	console.log('Connection established');
+	// });
+	// console.log("Pool is : ", pool);
+	var dbclient = pool;
 	global.all_users = [];
 
 	let api = Router();
@@ -79,7 +86,7 @@ export default ({ config, db }) => {
 							hotmail: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.hotmail.index),
 							yahoo: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.yahoo.index),
 						}
-						xdb.query('INSERT INTO domain SET ?', temp_company, (err, result) => {
+						dbclient.query('INSERT INTO domain SET ?', temp_company, (err, result) => {
 							if (err) {
 								console.log(err.sqlMessage);
 								if (!res.headersSent) {
@@ -127,7 +134,30 @@ export default ({ config, db }) => {
 			return;
 		}
 
-		xdb.query('SELECT name, domain_name, country, alexaRank, employees, employeesRange, estimatedAnnualRevenue, industry, industryGroup, sector, tech_stack, linkedin, facebook, facebook_likes, twitter, twitter_followers, gmail, hotmail, yahoo FROM domain where domain_name like "' + domainName + '"', (err, rows) => {
+		dbclient.query('SELECT name, domain_name, country, alexaRank, employees, employeesRange, estimatedAnnualRevenue, industry, industryGroup, sector, tech_stack, linkedin, facebook, facebook_likes, twitter, twitter_followers, gmail, hotmail, yahoo FROM domain where domain_name like "' + domainName + '"', (err, rows) => {
+			if (err) {
+				console.log(err);
+				res.json({ "status": "error", "Reason": err });
+			}
+			console.log('Data received from Db:');
+			console.log(JSON.stringify(rows));
+
+			res.json(rows);
+			return;
+		});
+	});
+
+
+
+	api.get('/deleteCompanyData', (req, res) => {
+		let domainName = req.query.domain;
+		console.log("Domain received", domainName);
+		if (domainName === undefined || domainName === "" || domainName.indexOf(".") < 0) {
+			res.json({ "status": "Error", "Reason": "Invalid domain" });
+			return;
+		}
+
+		dbclient.query('delete FROM domain where domain_name like "' + domainName + '"', (err, rows) => {
 			if (err) {
 				console.log(err);
 				res.json({ "status": "error", "Reason": err });
@@ -190,7 +220,7 @@ export default ({ config, db }) => {
 								personjson: JSON.stringify(person_data)
 							};
 							// console.log(person);
-							xdb.query('INSERT INTO customer SET ?', temp_cust, (err, result) => {
+							dbclient.query('INSERT INTO customer SET ?', temp_cust, (err, result) => {
 								if (err) {
 									console.log(err.sqlMessage);
 									if (!res.headersSent){
@@ -228,12 +258,33 @@ export default ({ config, db }) => {
 			return;
 		}
 
-		xdb.query('SELECT email, fullname, domain_name, location, country, title, role, seniority, facebook, twitter, twitter_followers, linkedin, company FROM customer where email = "' + emailData +'"' , (err, rows) => {
+		dbclient.query('SELECT email, fullname, domain_name, location, country, title, role, seniority, facebook, twitter, twitter_followers, linkedin, company FROM customer where email = "' + emailData +'"' , (err, rows) => {
 			if (err) {
 				console.log(err);
 				res.json({ "status": "error", "Reason": err });
 			}
 			console.log('Data received from Db:\n');
+			console.log(JSON.stringify(rows));
+
+			res.json(rows);
+			return;
+		});
+	});
+
+	api.get('/deleteCustomerData', (req, res) => {
+		let emailData = req.query.email;
+		console.log("email received", emailData);
+		if (emailData === undefined || emailData === "" || emailData.indexOf("@") < 0) {
+			res.json({ "status": "Error", "Reason": "Invalid Email" });
+			return;
+		}
+
+		xdb.query('delete FROM customer where email = "' + emailData +'"' , (err, rows) => {
+			if (err) {
+				console.log(err);
+				res.json({ "status": "error", "Reason": err });
+			}
+			console.log('Data received from Db:');
 			console.log(JSON.stringify(rows));
 
 			res.json(rows);
