@@ -18,22 +18,21 @@ export default ({ config, db }) => {
 	let clearbit = clearbit_client('sk_cc85a3f828e324514428d0f535473922');
 
 	// First you need to create a connection to the db
-	// global.xdb = mysql.createConnection({
-	// 	host: 'localhost',
-	// 	user: 'root',
-	// 	paZ_DATA_ERRORssword: 'Root@123',
-	// 	database: 'projectx'
-	// });
+	global.xdb = mysql.createConnection({
+		host: 'localhost',
+		user: 'root',
+		password: 'Root@123',
+		database: 'projectx'
+	});
 
-	// xdb.connect((err) => {
-	// 	if (err) {
-	// 		console.log('Error connecting to Db');
-	// 		return;
-	// 	}
-	// 	console.log('Connection established');
-	// });
-	// console.log("Pool is : ", pool);
-	var dbclient = pool;
+	xdb.connect((err) => {
+		if (err) {
+			console.log('Error connecting to Db');
+			return;
+		}
+		console.log('Connection established');
+	});
+
 	global.all_users = [];
 
 	let api = Router();
@@ -134,7 +133,7 @@ export default ({ config, db }) => {
 			return;
 		}
 
-		dbclient.query('SELECT name, domain_name, country, alexaRank, employees, employeesRange, estimatedAnnualRevenue, industry, industryGroup, sector, tech_stack, linkedin, facebook, facebook_likes, twitter, twitter_followers, gmail, hotmail, yahoo FROM domain where domain_name like "' + domainName + '"', (err, rows) => {
+		xdb.query('SELECT name, domain_name, country, alexaRank, employees, employeesRange, estimatedAnnualRevenue, industry, industryGroup, sector, tech_stack, linkedin, facebook, facebook_likes, twitter, twitter_followers, gmail, hotmail, yahoo FROM domain where domain_name like "' + domainName + '"', (err, rows) => {
 			if (err) {
 				console.log(err);
 				res.json({ "status": "error", "Reason": err });
@@ -220,7 +219,7 @@ export default ({ config, db }) => {
 								personjson: JSON.stringify(person_data)
 							};
 							// console.log(person);
-							dbclient.query('INSERT INTO customer SET ?', temp_cust, (err, result) => {
+							xdb.query('INSERT INTO customer SET ?', temp_cust, (err, result) => {
 								if (err) {
 									console.log(err.sqlMessage);
 									if (!res.headersSent){
@@ -258,7 +257,7 @@ export default ({ config, db }) => {
 			return;
 		}
 
-		dbclient.query('SELECT email, fullname, domain_name, location, country, title, role, seniority, facebook, twitter, twitter_followers, linkedin, company FROM customer where email = "' + emailData +'"' , (err, rows) => {
+		xdb.query('SELECT email, fullname, domain_name, location, country, title, role, seniority, facebook, twitter, twitter_followers, linkedin, company FROM customer where email = "' + emailData +'"' , (err, rows) => {
 			if (err) {
 				console.log(err);
 				res.json({ "status": "error", "Reason": err });
