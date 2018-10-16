@@ -6,14 +6,10 @@ import * as request from "request-promise";
 import 'babel-polyfill';
 import 'isomorphic-fetch';
 import { Z_DATA_ERROR } from 'zlib';
-var pool = require('../dbconnection');
+var dbclient = require('../dbconnection');
 
 
 export default ({ config, db }) => {
-
-	pool.query("select * from customer", null , function (error, results, fields) {
-		console.log("error is :", error);
-	});
 
 	let clearbit = clearbit_client('sk_cc85a3f828e324514428d0f535473922');
 
@@ -178,7 +174,9 @@ export default ({ config, db }) => {
 			res.json({ "status": "Error", "Reason": "Invalid domain" });
 			return;
 		}
-		clearbit.Prospector.search({ domain: domainName })
+
+		let total_records = 0;
+		clearbit.Prospector.search({ domain: domainName, role: "ceo"  })
 			.then(function (people) {
 				people.forEach(function (person) {
 					// console.log(person);
@@ -229,6 +227,7 @@ export default ({ config, db }) => {
 								}
 
 								if (result !== undefined){
+									total_records++;
 									console.log('Last insert ID:', result.insertId);
 								}
 								if (!res.headersSent) {
@@ -239,8 +238,8 @@ export default ({ config, db }) => {
 							});
 						}).catch(reason => console.log(reason.message))
 				});
-				
-				return people;
+				res.json({ "status": "Error", "Reason": total_records+" records inserted" });
+				return;
 			})
 			.catch(function (err) {
 				console.log('Bad/invalid request, unauthorized, Clearbit error, or failed request');
