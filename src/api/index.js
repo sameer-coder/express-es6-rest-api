@@ -66,8 +66,6 @@ export default ({ config, db }) => {
 						// console.log("eds_data", eds_data.deliverabilityIndexes[0]);
 
 						let tech_stack = (company.tech).join(",");
-						let json_raw_string = cleanString(JSON.stringify(company));
-						console.log(json_raw);
 
 						const temp_company = {
 							companyid: company.id,
@@ -87,17 +85,17 @@ export default ({ config, db }) => {
 							facebook_likes: company.facebook.likes,
 							twitter: company.twitter.handle,
 							twitter_followers: company.twitter.followers,
-							json_raw: json_raw_string,
-							eds_raw: cleanString(JSON.stringify(eds_data.deliverabilityIndexes)),
+							json_raw: JSON.stringify(cleanString(company)),
+							eds_raw: JSON.stringify(cleanString(eds_data.deliverabilityIndexes)),
 							gmail: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.gmail.index),
 							hotmail: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.hotmail.index),
 							yahoo: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.yahoo.index),
 						}
 						dbclient.query('INSERT INTO domain SET ?', temp_company, (err, result) => {
 							if (err) {
-								console.log(err.sqlMessage);
+								console.log(err);
 								if (!res.headersSent) {
-									res.json({ "status": "Error", "Reason": err.sqlMessage });
+									res.json({ "status": "Error", "Reason": err });
 									return;
 								}
 							}
@@ -121,9 +119,9 @@ export default ({ config, db }) => {
 						res.json({ "status": "Error", "Reason": err });
 						return;
 					}).catch((reason) => {
-						console.log(reason.message);
+						console.log(reason);
 						if (!res.headersSent) {
-							res.json({ "status": "Error", "Reason": reason.message });
+							res.json({ "status": "Error", "Reason": reason });
 							return;
 						};
 					})
