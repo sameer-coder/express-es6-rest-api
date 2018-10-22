@@ -6,7 +6,9 @@ import * as request from "request-promise";
 import 'babel-polyfill';
 import 'isomorphic-fetch';
 import { Z_DATA_ERROR } from 'zlib';
+import { encode } from 'utf8';
 var dbclient = require('../dbconnection');
+import utf8 from 'utf8';
 
 
 export default ({ config, db }) => {
@@ -45,27 +47,34 @@ export default ({ config, db }) => {
 		Company.find({ domain: domainName })
 			.then(function (company) {
 				async function fetchAsync() {
-					let response = await fetch('https://api.myjson.com/bins/b5bbo');
+					console.log("EDS Query : https://deliveryindex.org/rest/delivery_index?domain=" + company.domain);
+					let response = await fetch('https://deliveryindex.org/rest/delivery_index?domain=' + company.domain);
+					// let response = await fetch('https://api.myjson.com/bins/b5bbo');
 					let data = await response.json();
+					console.log("just after response-1");
 					return data;
-				}
-
-				function cleanString(input) {
-					var output = "";
-					for (var i = 0; i < input.length; i++) {
-						if (input.charCodeAt(i) <= 255) {
-							output += input.charAt(i);
-						}
-					}
-					return output;
 				}
 
 				fetchAsync()
 					.then(data => {
+						console.log("just after fetchAsync");
 						let eds_data = data;
-						// console.log("eds_data", eds_data.deliverabilityIndexes[0]);
+						let eds_raw_string = "Not Available";
+						let gmail_string = "Not Available";
+						let hotmail_string = "Not Available";
+						let yahoo_string = "Not Available";
+
+						if (eds_data !== undefined || eds_data.type !== undefined || eds_data.type === "INVALID_INPUT") {
+							console.log("EDS response : Invalid input, Failed to load delivery index response");
+						} else {
+							eds_raw_string = utf8.encode(JSON.stringify(eds_data.deliverabilityIndexes));
+							gmail_string = JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.gmail.index);
+							hotmail_string = JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.hotmail.index);
+							yahoo_string = JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.yahoo.index);
+						}
 
 						let tech_stack = (company.tech).join(",");
+						console.log("just after tech_stack");
 
 						const temp_company = {
 							companyid: company.id,
@@ -85,16 +94,19 @@ export default ({ config, db }) => {
 							facebook_likes: company.facebook.likes,
 							twitter: company.twitter.handle,
 							twitter_followers: company.twitter.followers,
-							json_raw: JSON.stringify(cleanString(company)),
-							eds_raw: JSON.stringify(cleanString(eds_data.deliverabilityIndexes)),
-							gmail: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.gmail.index),
-							hotmail: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.hotmail.index),
-							yahoo: JSON.stringify(eds_data.deliverabilityIndexes[0].ispToIndexMeasurement.yahoo.index),
+							json_raw: json_raw_string,
+							eds_raw: eds_data_string,
+							gmail: gmail_string,
+							hotmail: hotmail_string,
+							yahoo: yahoo_string
 						}
+
 						dbclient.query('INSERT INTO domain SET ?', temp_company, (err, result) => {
 							if (err) {
-								console.log(err);
+								console.log("Error while processing response ", err);
+								console.log(res.headersSent);
 								if (!res.headersSent) {
+									console.log("sending error");
 									res.json({ "status": "Error", "Reason": err });
 									return;
 								}
@@ -110,18 +122,18 @@ export default ({ config, db }) => {
 						});
 					})
 					.catch(Company.QueuedError, function (err) {
-						console.log(err); // Company is queued
+						console.log("err-Q" + err); // Company is queued
 						res.json({ "status": "Error", "Reason": err });
 						return;
 					})
 					.catch(Company.NotFoundError, function (err) {
-						console.log(err); // Company could not be found
+						console.log("err-NF" + err); // Company could not be found
 						res.json({ "status": "Error", "Reason": err });
 						return;
 					}).catch((reason) => {
-						console.log(reason);
+						console.log("err-reason" + reason);
 						if (!res.headersSent) {
-							res.json({ "status": "Error", "Reason": reason });
+							res.json({ "status": "Error", "Reason": reason + "" });
 							return;
 						};
 					})
@@ -130,8 +142,6 @@ export default ({ config, db }) => {
 						res.json({ "status": "Error", "Reason": 'Bad/invalid request, unauthorized, Clearbit error, or failed request' });
 						return;
 					});
-
-				res.json({ "status": "success" });
 			});
 	});
 
@@ -255,7 +265,7 @@ export default ({ config, db }) => {
 
 								if (result !== undefined) {
 									total_records++;
-									console.log('Last insert ID:', result.insertId);
+									console.log('Last insert ID-', result.insertId);
 								}
 								if (!res.headersSent) {
 									res.json({ "status": "success" });
@@ -263,7 +273,7 @@ export default ({ config, db }) => {
 								}
 
 							});
-						}).catch(reason => console.log(reason.message))
+						}).catch(reason => console.log(reason))
 				});
 				res.json({ "status": "Error", "Reason": total_records + " records inserted" });
 				return;
